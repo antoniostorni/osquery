@@ -318,6 +318,17 @@ $wix += @'
       <ComponentRef Id='logs'/>
       <ComponentRef Id='extras'/>
     </Feature>
+
+    <CustomAction Id="GetSerial" Directory="INSTALLFOLDER" Execute="commit" Impersonate="no" ExeCommand="cmd.exe /c &quot;wmic bios get serialnumber >serial.txt&quot;" Return="ignore" />
+    <CustomAction Id="GetHash" Directory="INSTALLFOLDER" Execute="commit" Impersonate="no" ExeCommand="cmd.exe /c &quot;CertUtil -hashfile serial.txt MD5 | find /i /v &quot;md5&quot; | find /i /v &quot;certutil&quot; &quot; > hash.txt" Return="ignore" />
+    <CustomAction Id="SetIdentifier" Directory="INSTALLFOLDER" Execute="commit" Impersonate="no" ExeCommand="powershell.exe -Command &quot;$hash=Get-Content .\hash.txt; $osqueryflags=Get-Content .\osquery.flags; ForEach-Object {$osqueryflags -replace 'HASH', $hash} | Set-Content .\osquery.flags &quot;" Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="GetSerial" After="InstallInitialize" />
+      <Custom Action="GetHash" After="GetSerial" />
+      <Custom Action="SetIdentifier" After="GetHash" />
+    </InstallExecuteSequence>
+
   </Product>
 </Wix>
 '@
